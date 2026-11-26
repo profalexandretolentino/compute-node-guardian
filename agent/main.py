@@ -6,39 +6,37 @@ from typing import Any, Dict, List
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
+from agent.collectors.gpu import collect_gpu_metrics
 from agent.collectors.linux_kernel import collect_kernel_metrics
 from agent.collectors.network import collect_network_metrics
 
 app = FastAPI(
     title="compute-node-guardian",
     description="Agente leve de monitoramento e autorrecuperação para nós Linux",
-    version="0.1.0",
+    version="0.2.0",
 )
 
-# Threshold configurável via env var (12-Factor App) — evita rebuild só para ajustar alerta
+# Threshold configurável via env var (12-Factor App)
 MAX_MEM_PERCENT = float(os.getenv("MAX_MEM_PERCENT", "90.0"))
 
 
 @app.get("/metrics")
 def get_metrics() -> Dict[str, Any]:
-    """
-    Expõe telemetria completa do nó (Kernel Linux + Rede).
-    Consumido por sistemas de observabilidade ou troubleshooting rápido via curl.
-    """
+    """Expõe telemetria completa do nó (Kernel Linux + Rede + GPU opcional)."""
     return {
         "node": socket.gethostname(),
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         "kernel": collect_kernel_metrics(),
         "network": collect_network_metrics(),
+        "gpu": collect_gpu_metrics(),
     }
 
 
 @app.get("/health")
 def health_check() -> JSONResponse:
     """
-    Endpoint de saúde integrado ao padrão Kubernetes (readinessProbe / livenessProbe).
-    Decisão Arquitetural #2 (Opção B): retorna HTTP 503 quando o nó cruza limiares críticos,
-    permitindo que o orquestrador drene tráfego ou dispare autorrecuperação.
+    Endpoint de saúde padrão Kubernetes (readinessProbe / livenessProbe).
+    Retorna HTTP 503 quando o nó cruza limiares críticos.
     """
     kernel = collect_kernel_metrics()
     network = collect_network_metrics()

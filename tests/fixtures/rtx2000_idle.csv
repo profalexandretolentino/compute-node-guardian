@@ -1,0 +1,2 @@
+﻿timestamp, name, driver_version, pci.bus_id, pcie.link.gen.current, pstate, temperature.gpu, utilization.gpu [%], memory.used [MiB], memory.total [MiB], power.draw [W], power.limit [W]
+2026/11/26 09:52:04.066, NVIDIA RTX 2000 Ada Generation, 596.71, 00000000:02:00.0, 1, P8, 29, 0 %, 1214 MiB, 16380 MiB, 5.59 W, 70.00 W
