@@ -6,14 +6,26 @@ from agent.main import app
 client = TestClient(app)
 
 
-def test_metrics_endpoint_returns_kernel_and_network_data():
-    response = client.get("/metrics")
+def test_status_endpoint_returns_kernel_network_and_gpu_json():
+    response = client.get("/status")
     assert response.status_code == 200
     body = response.json()
     assert "kernel" in body
     assert "network" in body
+    assert "gpu" in body
     assert "memory" in body["kernel"]
     assert "interfaces" in body["network"]
+
+
+def test_metrics_endpoint_returns_prometheus_format():
+    """Valida a Decisão Arquitetural #5 (Opção B): /metrics no formato Prometheus."""
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    text = response.text
+    assert "node_guardian_memory_used_percent" in text
+    assert "node_guardian_cpu_load_1m" in text
+    assert "node_guardian_gpu_available" in text
 
 
 def test_health_returns_200_when_healthy():
