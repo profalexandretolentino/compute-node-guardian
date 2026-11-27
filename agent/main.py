@@ -152,3 +152,16 @@ def health_check() -> JSONResponse:
             "dns_latency_ms": network["dns"]["latency_ms"],
         },
     )
+
+
+@app.post("/chaos/oom")
+def trigger_oom() -> JSONResponse:
+    """
+    Endpoint de Chaos Engineering (desabilitado por padrão).
+    Aloca ~200 MiB no PID 1 para provocar OOMKilled (Exit Code 137) sob cgroup limit de 128Mi.
+    """
+    if os.getenv("ENABLE_CHAOS", "false").lower() != "true":
+        return JSONResponse(status_code=403, content={"error": "Chaos mode disabled"})
+    # Aloca memória diretamente no processo principal (PID 1)
+    _ = bytearray(200 * 1024 * 1024)
+    return JSONResponse(status_code=200, content={"status": "allocated"})
